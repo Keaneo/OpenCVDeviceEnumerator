@@ -1,10 +1,13 @@
+#include "pch.h"
 #include "DeviceEnumerator.h"
 
-std::map<int, Device> DeviceEnumerator::getVideoDevicesMap() {
+std::map<int, Device> DeviceEnumerator::getVideoDevicesMap()
+{
 	return getDevicesMap(CLSID_VideoInputDeviceCategory);
 }
 
-std::map<int, Device> DeviceEnumerator::getAudioDevicesMap() {
+std::map<int, Device> DeviceEnumerator::getAudioDevicesMap()
+{
 	return getDevicesMap(CLSID_AudioInputDeviceCategory);
 }
 
@@ -14,7 +17,8 @@ std::map<int, Device> DeviceEnumerator::getDevicesMap(const GUID deviceClass)
 	std::map<int, Device> deviceMap;
 
 	HRESULT hr = CoInitialize(nullptr);
-	if (FAILED(hr)) {
+	if (FAILED(hr))
+	{
 		return deviceMap; // Empty deviceMap as an error
 	}
 
@@ -24,9 +28,11 @@ std::map<int, Device> DeviceEnumerator::getDevicesMap(const GUID deviceClass)
 
 	// If succeeded, create an enumerator for the category
 	IEnumMoniker *pEnum = NULL;
-	if (SUCCEEDED(hr)) {
+	if (SUCCEEDED(hr))
+	{
 		hr = pDevEnum->CreateClassEnumerator(deviceClass, &pEnum, 0);
-		if (hr == S_FALSE) {
+		if (hr == S_FALSE)
+		{
 			hr = VFW_E_NOT_FOUND;
 		}
 		pDevEnum->Release();
@@ -34,14 +40,17 @@ std::map<int, Device> DeviceEnumerator::getDevicesMap(const GUID deviceClass)
 
 	// Now we check if the enumerator creation succeeded
 	int deviceId = -1;
-	if (SUCCEEDED(hr)) {
+	if (SUCCEEDED(hr))
+	{
 		// Fill the map with id and friendly device name
 		IMoniker *pMoniker = NULL;
-		while (pEnum->Next(1, &pMoniker, NULL) == S_OK) {
+		while (pEnum->Next(1, &pMoniker, NULL) == S_OK)
+		{
 
 			IPropertyBag *pPropBag;
 			HRESULT hr = pMoniker->BindToStorage(0, 0, IID_PPV_ARGS(&pPropBag));
-			if (FAILED(hr)) {
+			if (FAILED(hr))
+			{
 				pMoniker->Release();
 				continue;
 			}
@@ -55,17 +64,20 @@ std::map<int, Device> DeviceEnumerator::getDevicesMap(const GUID deviceClass)
 
 			// Read FriendlyName or Description
 			hr = pPropBag->Read(L"Description", &var, 0); // Read description
-			if (FAILED(hr)) {
+			if (FAILED(hr))
+			{
 				// If description fails, try with the friendly name
 				hr = pPropBag->Read(L"FriendlyName", &var, 0);
 			}
 			// If still fails, continue with next device
-			if (FAILED(hr)) {
+			if (FAILED(hr))
+			{
 				VariantClear(&var);
 				continue;
 			}
 			// Convert to string
-			else {
+			else
+			{
 				deviceName = ConvertBSTRToMBS(var.bstrVal);
 			}
 
@@ -73,11 +85,13 @@ std::map<int, Device> DeviceEnumerator::getDevicesMap(const GUID deviceClass)
 
 								// We try to read the DevicePath
 			hr = pPropBag->Read(L"DevicePath", &var, 0);
-			if (FAILED(hr)) {
+			if (FAILED(hr))
+			{
 				VariantClear(&var);
 				continue; // If it fails we continue with next device
 			}
-			else {
+			else
+			{
 				devicePath = ConvertBSTRToMBS(var.bstrVal);
 			}
 
